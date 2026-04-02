@@ -18,9 +18,9 @@ public class OrderController {
     private OrderServiceImpl orderServiceImpl;
 
     @PostMapping
-    public ResponseEntity<Order> placeOrder(@RequestBody Order order){
-        Order placedOrder = orderServiceImpl.placeOrder(order);
-        return new ResponseEntity<>(placedOrder, HttpStatus.CREATED);
+    public ResponseEntity<Order> placeOrUpdateOrder(@RequestBody Order order) {
+        Order savedOrder = orderServiceImpl.placeOrUpdateOrder(order);
+        return new ResponseEntity<>(savedOrder, HttpStatus.OK);
     }
 
     @GetMapping

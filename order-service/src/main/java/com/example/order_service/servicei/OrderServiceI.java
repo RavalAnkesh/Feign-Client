@@ -6,7 +6,7 @@ import com.example.order_service.entity.Order;
 import java.util.List;
 
 public interface OrderServiceI {
-    Order placeOrder(Order order);
+    Order placeOrUpdateOrder(Order order);
     List<OrderResponseDTO> getAllOrders();
     Order getOrderById(Long orderId);
     void cancelOrder(Long orderId);

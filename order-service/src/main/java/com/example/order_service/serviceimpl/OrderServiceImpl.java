@@ -10,6 +10,7 @@ import com.example.order_service.feign.UserClient;
 import com.example.order_service.repository.OrderRepository;
 import com.example.order_service.servicei.OrderServiceI;
 import feign.FeignException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -29,7 +30,8 @@ public class OrderServiceImpl implements OrderServiceI {
     private ProductClient productClient;
 
     @Override
-    public Order placeOrder(Order order) {
+    @CircuitBreaker(name="UserProductCB", fallbackMethod = "placeOrderFallback")
+    public Order placeOrUpdateOrder(Order order) {
 
         UserClient.UserResponse user;
         ProductClient.ProductResponse product;
@@ -37,22 +39,50 @@ public class OrderServiceImpl implements OrderServiceI {
         try {
             user = userClient.getUserById(order.getUserId());
         } catch (FeignException.NotFound e) {
-            throw new UserNotFoundException("User Not Found With User ID : " + order.getUserId());
+            throw new UserNotFoundException("User Not Found With User ID: " + order.getUserId());
         }
 
         try {
             product = productClient.getProductById(order.getProductId());
         } catch (FeignException.NotFound e) {
-            throw new ProductNotFoundException("Product Not Found With Product ID : " + order.getProductId());
+            throw new ProductNotFoundException("Product Not Found With Product ID: " + order.getProductId());
         }
 
-        order.setUserName(user.getName());
-        order.setProductName(product.getName());
-        order.setTotalPrice(product.getPrice() * order.getQuantity());
+        Order orderToSave;
 
-        return orderRepository.save(order);
+        if (order.getOrderId() != null) {
+            orderToSave = orderRepository.findById(order.getOrderId())
+                    .orElseThrow(() -> new OrderNotFoundException("Order Not Found With OrderID: " + order.getOrderId()));
+
+            orderToSave.setUserId(order.getUserId());
+            orderToSave.setProductId(order.getProductId());
+            orderToSave.setQuantity(order.getQuantity());
+        } else {
+            orderToSave = new Order();
+            orderToSave.setUserId(order.getUserId());
+            orderToSave.setProductId(order.getProductId());
+            orderToSave.setQuantity(order.getQuantity());
+        }
+
+        orderToSave.setUserName(user.getName());
+        orderToSave.setProductName(product.getName());
+        orderToSave.setTotalPrice(product.getPrice() * order.getQuantity());
+
+        return orderRepository.save(orderToSave);
     }
+    public Order placeOrderFallback(Order order, Throwable t) {
+        System.out.println("Circuit breaker triggered: " + t.getMessage());
+        order.setOrderId(null);
+        order.setUserId(null);
+        order.setProductId(null);
+        order.setUserName(null);
+        order.setProductName(null);
+        order.setQuantity(0);
+        order.setTotalPrice(0.0);
 
+        order.setMessage("Service temporarily unavailable. Please try again later.");
+        return order;
+    }
     @Override
     public List<OrderResponseDTO> getAllOrders() {
         List<Order> orders = orderRepository.findAll();
