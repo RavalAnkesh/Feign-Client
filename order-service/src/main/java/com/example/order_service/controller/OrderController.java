@@ -41,6 +41,32 @@ public class OrderController {
         return new ResponseEntity<>(order, HttpStatus.OK);
     }
 
+    @GetMapping("/search/{userName}")
+    public ResponseEntity<List<OrderResponseDTO>> getByUserName(@PathVariable String userName) {
+
+        List<OrderResponseDTO> orders = orderServiceImpl.searchByUserName(userName);
+        if (orders.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<>(orders, HttpStatus.FOUND);
+    }
+    @GetMapping("/search/id/{id}")
+    public ResponseEntity<List<OrderResponseDTO>> getByUserId(@PathVariable Long id){
+
+        List<OrderResponseDTO> orders = orderServiceImpl.searchByUserID(id);
+        if (orders.isEmpty()){
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<>(orders, HttpStatus.OK);
+    }
+    @GetMapping("/search/pid/{id}")
+    public ResponseEntity<List<OrderResponseDTO>> getByProductId(@PathVariable Long id){
+        List<OrderResponseDTO> orders = orderServiceImpl.searchByProductId(id);
+        if (orders.isEmpty()){
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<>(orders,HttpStatus.OK);
+    }
     @DeleteMapping("/{orderId}")
     public ResponseEntity<String> cancelOrder(@PathVariable Long orderId){
         Order order = orderServiceImpl.getOrderById(orderId);

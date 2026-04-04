@@ -14,8 +14,8 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class OrderServiceImpl implements OrderServiceI {
@@ -83,6 +83,7 @@ public class OrderServiceImpl implements OrderServiceI {
         order.setMessage("Service temporarily unavailable. Please try again later.");
         return order;
     }
+
     @Override
     public List<OrderResponseDTO> getAllOrders() {
         List<Order> orders = orderRepository.findAll();
@@ -105,6 +106,60 @@ public class OrderServiceImpl implements OrderServiceI {
                .orElseThrow(()->new OrderNotFoundException("OrderNot Found With OrderID : "+orderId));
     }
 
+    public List<OrderResponseDTO> searchByUserName(String userName){
+        List<Order> allOrder = orderRepository.findAll();
+        List<OrderResponseDTO> result =  new ArrayList<>();
+        for(Order order : allOrder){
+            if(order != null && order.getUserName().equalsIgnoreCase(userName)){
+                result.add(new OrderResponseDTO(
+                        order.getOrderId(),
+                        order.getUserName(),
+                        order.getProductName(),
+                        order.getQuantity(),
+                        order.getTotalPrice()
+                ));
+            }
+        }
+        if (result.isEmpty()){
+            throw new OrderNotFoundException("No Order Found For User : "+userName);
+        }
+        return result;
+    }
+    public List<OrderResponseDTO> searchByUserID(Long id) {
+        List<Order> allorders = orderRepository.findAll();
+        List<OrderResponseDTO> result = new ArrayList<>();
+        for (Order order : allorders) {
+            if (order != null &&
+                    order.getUserId() != null &&
+                    order.getUserId().equals(id)) {
+
+                result.add(new OrderResponseDTO(
+                        order.getOrderId(),
+                        order.getUserName(),
+                        order.getProductName(),
+                        order.getQuantity(),
+                        order.getTotalPrice()
+                ));
+            }
+        }
+        return result;
+    }
+    public List<OrderResponseDTO> searchByProductId(Long id){
+        List<Order> all = orderRepository.findAll();
+        List<OrderResponseDTO> result = new ArrayList<>();
+        for(Order order : all){
+            if (order != null && order.getProductId() != null && order.getProductId().equals(id)){
+                result.add(new OrderResponseDTO(
+                        order.getOrderId(),
+                        order.getUserName(),
+                        order.getProductName(),
+                        order.getQuantity(),
+                        order.getTotalPrice()
+                ));
+            }
+        }
+        return result;
+    }
     @Override
     public void cancelOrder(Long orderId) {
         Order order = orderRepository

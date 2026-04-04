@@ -1,0 +1,41 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    discovery:
+      enabled: true
+    eureka:
+      client:
+        register-with-eureka: true
+        fetch-registry: true
+
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+      routes:
+        - id: USER-SERVICE
+          uri: http://localhost:8081
+          predicates:
+            - Path=/user/**
+
+        - id: PRODUCT-SERVICE
+          uri: http://localhost:8082
+          predicates:
+            - Path=/product/**  
+
+        - id: ORDER-SERVICE
+          uri: http://localhost:8083
+          predicates:
+            - Path=/order/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: false
+    fetch-registry: false
